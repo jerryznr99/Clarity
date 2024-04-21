@@ -25,7 +25,7 @@ SOURCE_CODE = [
 rx.upload()
 
 
-class VideoState(rx.State):
+class State(rx.State):
     last_screenshot: Image.Image | None = None
     last_screenshot_timestamp: str = ""
     loading: bool = False
@@ -82,9 +82,9 @@ class VideoState(rx.State):
         """Start recording a video."""
         return webcam.start_recording(
             ref,
-            on_data_available=VideoState.handle_video_chunk,
-            on_start=VideoState.on_start_recording,
-            on_stop=VideoState.on_stop_recording,
+            on_data_available=State.handle_video_chunk,
+            on_start=State.on_start_recording,
+            on_stop=State.on_stop_recording,
             timeslice=1000,
         )
 
@@ -93,15 +93,16 @@ def last_screenshot_widget() -> rx.Component:
     """Widget for displaying the last screenshot and timestamp."""
     return rx.box(
         rx.cond(
-            VideoState.last_screenshot,
+            State.last_screenshot,
             rx.fragment(
-                rx.image(src=VideoState.last_screenshot),
-                rx.text(VideoState.last_screenshot_timestamp),
+                rx.image(src=State.last_screenshot),
+                rx.text(State.last_screenshot_timestamp),
             ),
             rx.center(
                 rx.text("Click image to capture.", size="4"),
             ),
         ),
+        height="270px",
     )
 
 
@@ -117,16 +118,15 @@ def webcam_upload_component(ref: str) -> rx.Component:
             id=ref,
             on_click=webcam.upload_screenshot(
                 ref=ref,
-                handler=VideoState.handle_screenshot,  # type: ignore
+                handler=State.handle_screenshot,  # type: ignore
             ),
-            style={'borderRadius': '15px'},
             audio=True,
         ),
         rx.cond(
-            VideoState.recording,
+            ~State.recording,
             rx.button(
                 "Start Recording",
-                on_click=VideoState.start_recording(ref),
+                on_click=State.start_recording(ref),
                 background_color="#1B3EF3",
                 size="3",
             ),
@@ -138,7 +138,7 @@ def webcam_upload_component(ref: str) -> rx.Component:
             ),
         ),
         rx.cond(
-            VideoState.video_exists,
+            State.video_exists,
             rx.link(
                 "Download Last Video", href=rx.get_upload_url(VIDEO_FILE_NAME), size="4"
             ),
